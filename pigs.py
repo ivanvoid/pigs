@@ -10,7 +10,6 @@ class Pigs:
         self.rec_iteration = 0
         
     
-    
     def segment(self, image):
         
         # 01.
@@ -31,15 +30,14 @@ class Pigs:
         # 03.
         degree, laplace = self.compute_LD(gram)
         # 04.
-        x = self.linear_solver(degree, laplace)
+        x, root_node = self.linear_solver(degree, laplace)
         # 05.
         threshold, ir = self.compute_IR_threshold(x, gram, degree)
-        mask = np.zeros(img_vector.size)
-        mask = x > threshold
+        mask = self.generate_mask(img_vector, x, threshold, root_node)
         
-#         # 051.
+        # 051.
         class_1 = img_vector[mask]
-        class_2 = img_vector[!mask]
+        class_2 = img_vector[np.logical_not(mask)]
         
         gram_1 = None
         gram_2 = None
@@ -52,6 +50,19 @@ class Pigs:
 
         self.rec_iteration += 1
         return mask
+    
+    def generate_mask(self, img_vector, x, threshold, root_node):
+        mask = np.zeros(img_vector.size, dtype=bool)
+        mask[:root_node] = x[:root_node] > threshold
+        if root_node  == 0:
+            mask[root_node] = x[root_node+1] > threshold
+        elif root_node  == img_vector.size:
+            mask[root_node] = x[root_node+1] > threshold
+        else:
+            mask[root_node] = x[root_node-1] > threshold
+            
+        mask[root_node+1:] = x[root_node:] > threshold
+        return mask
         
         
     def flatter(self, image):
@@ -62,21 +73,65 @@ class Pigs:
             return np.array(image).astype(np.float)[:,:,0].flatten() / 255
         
         
-    def compute_gram(self, flat_image, kernel=None):
+    def _compute_gram(self, flat_image, kernel=None):
         N = flat_image.size
         gram = np.zeros((N,N), dtype=np.float)
         for i in range(N):
             for j in range(N):
-                if kernel:
-                    gram = kernel(flat_image[i], flat_image[j])
-                else:
-                    gram[i,j] = self._kernel(flat_image[i], flat_image[j], i, j, beta=self.beta)
+                if i < j:
+                    if kernel:
+                        gram = kernel(flat_image[i], flat_image[j])
+                    else:
+                        gram[i,j] = self._kernel(
+                            flat_image[i], flat_image[j], i, j, 
+                            len(flat_image), beta=self.beta)
+        gram += gram.T
+        for i in range(N):
+            gram[i,i] = 1
+        return gram
+    
+    def compute_gram(self, flat_image, kernel=None):
+        # half a gram
+        N = flat_image.size
+        gram = np.zeros((N,N), dtype=np.float)
+        
+        for i in range(N):
+            # for even
+            if i%2 == 0:
+                for j in range(N//2):
+                    ii = i
+                    jj = j*2+1 # odd
+                    if ii < jj:    
+                        gram[ii,jj] = self._kernel(
+                            flat_image[ii], flat_image[jj], ii, jj, 
+                            len(flat_image), beta=self.beta)
+            # for even
+            else:
+                for j in range(N//2):
+                    ii = i
+                    jj = j*2 # even
+                    if ii < jj:        
+                        gram[ii,jj] = self._kernel(
+                            flat_image[ii], flat_image[jj], ii, jj, 
+                            len(flat_image), beta=self.beta)
+                    
+        gram += gram.T
         return gram
     
     
-    def _kernel(self, x, y, i, j, beta=3):
-        return np.exp(-beta * ((x - y)**2 + (i - j)**2))
     
+    def _kernel(self, x, y, i, j, N, beta=3):
+        val = (x - y)**2
+        # V1
+        pos = ((i - j)/(N**2))**2
+        weight = val + pos
+
+        # V2
+#         pos = 1 - ((i - j)/(N**2))**2
+#         weight = val * pos
+        
+        weight = np.exp(-beta * weight)
+        return weight     
     
     def compute_LD(self, gram):
         degree = np.zeros(gram.shape[0])
@@ -92,7 +147,7 @@ class Pigs:
     def linear_solver(self, degree, laplace):
         # 141.
         root_node = degree.argmax()
-        print('Root node:',root_node)
+        if self.verbose: print('Root node:',root_node)
         # 142.
         laplace =  np.concatenate((
             np.concatenate((
@@ -109,7 +164,7 @@ class Pigs:
         # 143.
         x = np.linalg.solve(laplace, degree)
         
-        return x
+        return x, root_node
             
     def compute_IR_threshold(self, x, gram, degree, steps=20):
         """Greedy threshold search
@@ -155,5 +210,6 @@ class Pigs:
                 perimeter += gram[a_idx, b_idx]
         
         # Compute isometric ratio
-        iso_ratio = perimeter / volume
+        iso_ratio = perimeter / (volume+1e-9)
         return iso_ratio
+    
