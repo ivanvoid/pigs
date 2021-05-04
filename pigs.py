@@ -74,6 +74,7 @@ class Pigs:
         
         
     def _compute_gram(self, flat_image, kernel=None):
+        # Original weights v1
         N = flat_image.size
         gram = np.zeros((N,N), dtype=np.float)
         for i in range(N):
@@ -90,8 +91,8 @@ class Pigs:
             gram[i,i] = 1
         return gram
     
-    def compute_gram(self, flat_image, kernel=None):
-        # half a gram
+    def _compute_gram(self, flat_image, kernel=None):
+        # Low densety graph weights v2
         N = flat_image.size
         gram = np.zeros((N,N), dtype=np.float)
         
@@ -105,7 +106,7 @@ class Pigs:
                         gram[ii,jj] = self._kernel(
                             flat_image[ii], flat_image[jj], ii, jj, 
                             len(flat_image), beta=self.beta)
-            # for even
+            # for odd
             else:
                 for j in range(N//2):
                     ii = i
@@ -118,6 +119,40 @@ class Pigs:
         gram += gram.T
         return gram
     
+    def compute_gram(self, flat_image, diag_size=500, kernel=None):
+        # Low densety diagonal graph weights v3
+        N = flat_image.size
+        gram = np.zeros((N,N), dtype=np.float)
+        # distance from main diaganal to computational boundory
+        if diag_size is None: 
+            diag_size = N // 4
+        
+        for i in range(N):
+            # where to compute
+            M = i + diag_size
+            if N - M < 0:
+                M = M + (N-M)
+            # for even
+            if i%2 == 0:
+                for j in range(i, M, 3):
+                    ii = i 
+                    jj = j
+                    if ii < jj:
+                        gram[ii,jj] = self._kernel(
+                            flat_image[ii], flat_image[jj], 
+                            ii, jj, N, beta=self.beta)
+            # odd
+            else:
+                for j in range(i, M, 2):
+                    ii = i; 
+                    jj = j # even
+                    if ii < jj:
+                        gram[ii,jj] = self._kernel(
+                            flat_image[ii], flat_image[jj], ii, jj, 
+                            len(flat_image), beta=self.beta)
+                
+        gram += gram.T
+        return gram
     
     
     def _kernel(self, x, y, i, j, N, beta=3):
