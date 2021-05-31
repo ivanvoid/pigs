@@ -10,6 +10,10 @@ public:
     PIGS(PIGS const & other);
     PIGS(PIGS && other);
     ~PIGS() = default;
+    
+    // fuctions
+    void compute_gram();
 private:
     // Vars
 };
+
