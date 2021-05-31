@@ -20,6 +20,6 @@ I propose to use fast lib based on cpp code for image to graph trarnslation and 
     - [x] 041\. max(Degree)
     - [x] 042\. Drop from Degree & Laplace
     - [x] 043\. Actual solver
-- [ ] 05\. IsoRatio computer
-    - [ ] 051\. Construct new gram 
+- [x] 05\. IsoRatio computer
+    - [x] 051\. Construct new gram 
 - [ ] 06\. Recursive part 

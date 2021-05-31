@@ -10,15 +10,15 @@ class Pigs:
         self.rec_iteration = 0
         
     
-    def segment(self, image):
+#     def segment(self, image):
         
-        # 01.
-        flat_image = self.flatter(image)
-        # 02.
-        gram = self.compute_gram(flat_image, self.kernel)
+#         # 01.
+#         flat_image = self.flatter(image)
+#         # 02.
+#         gram = self.compute_gram(flat_image, self.kernel)
         
-        # 06.
-        self._recursion(flat_image, gram, 1)
+#         # 06.
+#         self._recursion(flat_image, gram, 1)
         
         
     def _recursion(self, img_vector, gram, IR):
@@ -52,7 +52,7 @@ class Pigs:
         return mask
     
     def generate_mask(self, img_vector, x, threshold, root_node):
-        mask = np.zeros(img_vector.size, dtype=bool)
+        mask = np.zeros(img_vector.shape[0], dtype=bool)
         mask[:root_node] = x[:root_node] > threshold
         if root_node  == 0:
             mask[root_node] = x[root_node+1] > threshold
@@ -65,16 +65,18 @@ class Pigs:
         return mask
         
         
-    def flatter(self, image):
-        if type(image)  == np.array:
-            return image.flatten()
-        else:
-            if self.verbose: print('Image shape:', np.array(image).shape)
-            return np.array(image).astype(np.float)[:,:,0].flatten() / 255
+#     def flatter(self, image):
+#         if type(image)  == np.array:
+#             return image.flatten()
+#         else:
+#             if self.verbose: print('Image shape:', np.array(image).shape)
+#             return np.array(image).astype(np.float)[:,:,0].flatten() / 255
         
         
-    def _compute_gram(self, flat_image, kernel=None):
+    def compute_gram(self, flat_image, kernel=None, beta=None):
         # Original weights v1
+        if beta == None: beta = self.beta
+        
         N = flat_image.size
         gram = np.zeros((N,N), dtype=np.float)
         for i in range(N):
@@ -85,7 +87,7 @@ class Pigs:
                     else:
                         gram[i,j] = self._kernel(
                             flat_image[i], flat_image[j], i, j, 
-                            len(flat_image), beta=self.beta)
+                            len(flat_image), beta=beta)
         gram += gram.T
         for i in range(N):
             gram[i,i] = 1
@@ -119,13 +121,14 @@ class Pigs:
         gram += gram.T
         return gram
     
-    def compute_gram(self, flat_image, diag_size=500, kernel=None):
+    def _compute_gram(self, flat_image, diag_size=None, kernel=None):
         # Low densety diagonal graph weights v3
         N = flat_image.size
         gram = np.zeros((N,N), dtype=np.float)
         # distance from main diaganal to computational boundory
-        if diag_size is None: 
-            diag_size = N // 4
+        if diag_size == None: 
+            diag_size = N // 2
+        print("Diagonal size:", diag_size)
         
         for i in range(N):
             # where to compute
