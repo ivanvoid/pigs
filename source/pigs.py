@@ -204,7 +204,7 @@ class Pigs:
         
         return x, root_node
             
-    def compute_IR_threshold(self, x, gram, degree, steps=20):
+    def compute_IR_threshold(self, x, gram, degree, steps=20, usesparse=False):
         """Greedy threshold search
         Best threshold for lowest Isometric Ratio
         """
@@ -214,19 +214,22 @@ class Pigs:
         
         lower_th = None
         lower_IR = 1
+        
+        IR_list = []
 
         # for each potential threshold
         for threshold in np.arange(xmin+step, xmax, step):
-            IR = self._compute_isometric_ratio(gram, degree, x, threshold)
+            IR = self._compute_isometric_ratio(gram, degree, x, threshold, usesparse)
+            IR_list.append((threshold, IR))
             
-            if IR < lower_IR:
+            if IR <= lower_IR:
                 lower_IR = IR
                 lower_th = threshold
                 
-        return lower_th, lower_IR 
+        return lower_th, lower_IR, IR_list
         
         
-    def _compute_isometric_ratio(self, gram, degree, x, threshold):
+    def _compute_isometric_ratio(self, gram, degree, x, threshold, usesparse=False):
         """Compute Isometric Ratio of a graph
         
         Isometric Ratio - sum of edge weights divided by
@@ -241,7 +244,11 @@ class Pigs:
         
         for a_idx in np.where(set_A)[0]:
             # Compute inside set volume
-            volume += degree[a_idx]
+            
+            if usesparse:
+                volume += degree[a_idx,0] # for sparse matrix
+            else:
+                volume += degree[a_idx]
 
             for b_idx in np.where(set_B)[0]:
                 # Compute boundaey betwen inside and outside sets

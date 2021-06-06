@@ -22,20 +22,9 @@ double rgb_pos_kernel(
         );
     
     double result = exp(-1 * beta * l2);
-    if(result < 1e-9)
-        return 0;
-    return result;
+//     return result;
+    return (result < 1e-7) ? 0 : result;
 }
-
-
-//     rgb1,rgb2,pos1,pos2,N,beta):
-//     pos = abs((pos1[0] - pos2[0]) + (pos1[1] - pos2[1])) / (2*N) 
-//     l2 = np.sqrt((rgb1[0] - rgb2[0] + pos)**2 + 
-//                  (rgb1[1] - rgb2[1] + pos)**2 + 
-//                  (rgb1[2] - rgb2[2] + pos)**2)
-//     result = np.exp(-beta * l2)
-
-//     return result
 
 int compute_gram(py::array_t<double> input, py::array_t<int> locations){
     // Get arrays info
