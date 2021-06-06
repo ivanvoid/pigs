@@ -26,46 +26,9 @@ double rgb_pos_kernel(
     return (result < 1e-7) ? 0 : result;
 }
 
-int compute_gram(py::array_t<double> input, py::array_t<int> locations){
-    // Get arrays info
-    // input.shape = (N,3)
-    py::buffer_info buffer_input    = input.request();
-    py::buffer_info locations_input = locations.request();
-//     int N = buffer_input.shape[0];
-
-    // Get pointers to arrays
-    double *ptr_input  = static_cast<double *>(buffer_input.ptr);
-//     int *ptr_locations = static_cast<int *>(locations_input.ptr);
-
-    
-    // Iterate through array
-    int k = 0;
-    for(int i=0; i < buffer_input.shape[0]; i++){
-//         for(int i=0; j < buffer_input.size; j++){
-        std::cout << i << ' ' 
-            << ptr_input[i] << '\n';
-//             << ptr_input[ii] << ' '
-//             << ptr_input[iii] << ' '
-//             << "\n";
-        k++;
-//         }
-    }
-    std::cout << k;
-    
-    return 1;
-}
-
-int add(int i, int j) {
-    return i + j;
-}
-
 PYBIND11_MODULE(_pigs, m) {
     m.doc() = "Lib for faster computation of pigs"; // optional module docstring
 
-    m.def("add", &add, "A function which adds two numbers");
-    
-//     m.def("compute_gram", &compute_gram, "Gram matrix computation");
-    
     m.def("rgb_pos_kernel", py::vectorize(rgb_pos_kernel), "Kernel computation");
     
 }
