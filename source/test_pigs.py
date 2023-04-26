@@ -14,7 +14,7 @@ def run_kernel(rgb1, rgb2, pos1, pos2, N, beta):
     x1, y1 = pos1[0]/(2*N), pos1[1]/(2*N)
     x2, y2 = pos2[0]/(2*N), pos2[1]/(2*N)
     
-    return _pigs.rgb_pos_kernel(R1,G1,B1,R2,G2,B2,x1,y1,x2,y2,beta)
+    return pigs.rgb_pos_kernel(R1,G1,B1,R2,G2,B2,x1,y1,x2,y2,beta)
     
 class PigsTest(unittest.TestCase):      
     def test_rgb_pos_kernel(self):
@@ -69,7 +69,7 @@ class PigsTest(unittest.TestCase):
         for i in range(1, N-1):
             Ni = N-i
 
-            out = _pigs.rgb_pos_kernel(R[i].repeat(Ni),G[i].repeat(Ni),B[i].repeat(Ni),
+            out = pigs.rgb_pos_kernel(R[i].repeat(Ni),G[i].repeat(Ni),B[i].repeat(Ni),
                                        R[i:],G[i:],B[i:],
                                        x[i].repeat(Ni),y[i].repeat(Ni),
                                        x[i:],y[i:],
